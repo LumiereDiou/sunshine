@@ -287,6 +287,13 @@ RMAPI Vector2 Scale(Vector2 v, float scale)
     return result;
 }
 
+RMAPI Vector2 Scale(float v, Vector2 scale)
+{
+    Vector2 result = { v * scale.x, v * scale.y };
+
+    return result;
+}
+
 // Project v1 onto v2
 RMAPI Vector2 Project(Vector2 v1, Vector2 v2)
 {
@@ -2138,6 +2145,11 @@ RMAPI Vector2 operator-(const Vector2& a, float b)
 }
 
 RMAPI Vector2 operator*(const Vector2& a, float b)
+{
+    return Scale(a, b);
+}
+
+RMAPI Vector2 operator*(float a, const Vector2& b)
 {
     return Scale(a, b);
 }
