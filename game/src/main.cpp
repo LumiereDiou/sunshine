@@ -14,12 +14,12 @@ int main(void)
     
     rlImGuiSetup(true);
 
-    Vector2 position = { 100, 100 }; //Pixel
-    //Vector2 position1 = { 0, 0 }; //Pixel
+    Vector2 seekerPosition = { 100, 100 }; //Pixel
     Vector2 velocity = { 10, 0 }; // Pixel / second
     Vector2 acceleration = { 50,0 }; // Pixel/s/s
     float maxSpeed = 1000;
     float maxAcceleration = 1000;
+
 
     while (!WindowShouldClose())
     {
@@ -31,20 +31,25 @@ int main(void)
 
         rlImGuiBegin();
 
-        SliderFloat2("position", &(position.x), 0, SCREEN_WIDTH);
+        SliderFloat2("position", &(seekerPosition.x), 0, SCREEN_WIDTH);
         SliderFloat2("velocity", &(velocity.x), -maxSpeed, maxSpeed);
         SliderFloat2("acceleration", &(acceleration.x), -maxAcceleration, maxAcceleration);
-        //Vector2 move = GetMousePosition();
         rlImGuiEnd();
 
-        //position = position + velocity * deltaTime;
-        position = position + velocity * deltaTime + 0.5f * acceleration * deltaTime * deltaTime;
+        seekerPosition = seekerPosition + velocity * deltaTime + 0.5f * acceleration * deltaTime * deltaTime;
         velocity = velocity + acceleration * deltaTime;// px/s/s * s = px/s
-
-
-        DrawCircleV(position, 50, GREEN);
         
-        DrawLineV(position, position + velocity, BLACK);
+        
+        Vector2 targetPosition = GetMousePosition();
+        Vector2 lengthToTarget = targetPosition - seekerPosition;
+
+  
+        //direction = { direction.x / Length(direction),direction.y / Length(direction) }; //Normalized
+       
+        DrawCircleV(seekerPosition, 50, BLUE);
+        DrawCircleV(targetPosition, 50, GRAY);
+        DrawLineV(seekerPosition, seekerPosition + velocity, RED);
+        DrawLineV(seekerPosition, seekerPosition + acceleration, GREEN);
 
         DrawFPS(10, 10);
 
