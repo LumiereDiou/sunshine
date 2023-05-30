@@ -1,10 +1,80 @@
 #include "rlImGui.h"
 #include "Math.h"
+#include <vector>
+
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
+const float deltaTime = GetFrameTime();
+
 using namespace ImGui;
+
+class RigidBody
+{
+public:
+    Vector2 position;
+    Vector2 velocity;
+    Vector2 acceleration;
+
+    RigidBody()
+        : position {100.0f,100.0f}
+        , velocity {10.0f,0.0f}
+        , acceleration{0.0f,50.0f}
+    {
+
+    }
+};
+
+class Agent
+{
+public:
+    RigidBody* rigidBody;
+    float maxSpeed;
+    float maxAcceleration;
+
+    Agent()
+        : maxSpeed (1000)
+        , maxAcceleration (1000)
+    {
+        rigidBody = new RigidBody();
+    }
+
+    void update()
+    {
+        rigidBody->position = rigidBody->position + rigidBody->velocity * deltaTime + 0.5f * maxAcceleration * deltaTime * deltaTime;
+        rigidBody->velocity = rigidBody->velocity + maxAcceleration * deltaTime;
+    }
+        
+
+
+    Vector2 Seek(Vector2 agentPosition, Vector2 velocity, Vector2 targetPosition, float maxAcceleration)
+    {
+        Vector2 toTarget = targetPosition - agentPosition;
+        toTarget = { toTarget.x / Length(toTarget), toTarget.y / Length(toTarget) };
+        Vector2 desiredVelocity = toTarget * maxSpeed;
+        Vector2 deltaVelocity = desiredVelocity - velocity;
+        Vector2 acceleration = { deltaVelocity.x / Length(deltaVelocity), deltaVelocity.y / Length(deltaVelocity) };
+        acceleration = acceleration * maxAcceleration;
+        velocity = velocity + acceleration * deltaTime;
+        return acceleration;
+    }
+
+    Vector2 Flee(Vector2 agentPosition, Vector2 velocity, Vector2 targetPosition, float maxAcceleration)
+    {
+
+        Vector2 toTarget = targetPosition + agentPosition;
+        toTarget = { toTarget.x / Length(toTarget), toTarget.y / Length(toTarget) };
+        Vector2 desiredVelocity = toTarget * maxSpeed;
+        Vector2 deltaVelocity = desiredVelocity - velocity;
+        Vector2 acceleration = { deltaVelocity.x / Length(deltaVelocity), deltaVelocity.y / Length(deltaVelocity) };
+        acceleration = acceleration * maxAcceleration;
+        velocity = velocity + acceleration * deltaTime;
+        return acceleration;
+    }
+};
+
+
 
 int main(void)
 {
@@ -14,59 +84,24 @@ int main(void)
     
     rlImGuiSetup(true);
 
-    Vector2 seekerPosition = { 100, 100 }; //Pixel
-    Vector2 velocity = { 10, 0 }; // Pixel / second
-    Vector2 acceleration = { 50,0 }; // Pixel/s/s
-    float currentSpeed = (velocity.x * velocity.x) + (velocity.y * velocity.y);
-    currentSpeed = sqrt(currentSpeed);
-    float maxSpeed = 1000;
-    float maxAcceleration = 1000;
-
+    Agent* seeker = new Agent();
+    Agent* target = new Agent();
 
     while (!WindowShouldClose())
     {
-        const float deltaTime = GetFrameTime();
+
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) target->rigidBody->position = GetMousePosition();
         
+        seeker->update();
+
+        Vector2 seek = seeker->Seek(seeker->rigidBody->position, seeker->rigidBody->velocity,target->rigidBody->position,50);
+
         BeginDrawing();
         
         ClearBackground(RAYWHITE);
 
-        rlImGuiBegin();
-
-        SliderFloat2("position", &(seekerPosition.x), 0, SCREEN_WIDTH);
-        SliderFloat2("velocity", &(velocity.x), -maxSpeed, maxSpeed);
-        SliderFloat2("acceleration", &(acceleration.x), -maxAcceleration, maxAcceleration);
-        SliderFloat2("speed", &(currentSpeed), -maxSpeed, maxSpeed);
-        rlImGuiEnd();
-
-        seekerPosition = seekerPosition + velocity * deltaTime + 0.5f * acceleration * deltaTime * deltaTime;
-        velocity = velocity + acceleration * deltaTime;// px/s/s * s = px/s
-        
-        
-        Vector2 targetPosition = GetMousePosition();
-        Vector2 lengthToTarget = targetPosition - seekerPosition;
-        Vector2 toTarget = { lengthToTarget.x / Length(lengthToTarget), lengthToTarget.y / Length(lengthToTarget) };
-        Vector2 desiredVelocity = toTarget * maxSpeed;
-        Vector2 deltaVelocity = desiredVelocity - velocity;
-        Vector2 accel = { deltaVelocity.x / Length(deltaVelocity), deltaVelocity.y / Length(deltaVelocity) };
-        accel = accel * maxAcceleration;
-        velocity = velocity + accel * deltaTime;
-        
-        if (currentSpeed > maxSpeed)
-        {
-            velocity = velocity * (maxSpeed / currentSpeed);
-        }
-
-  
-        //direction = { direction.x / Length(direction),direction.y / Length(direction) }; //Normalized
-       
-        DrawCircleV(seekerPosition, 50, BLUE);
-       
-        DrawCircleV(targetPosition, 50, GRAY);
-        DrawLineV(seekerPosition, seekerPosition + lengthToTarget, RED);
-        DrawLineV(seekerPosition, seekerPosition + acceleration, GREEN);
-
-        DrawFPS(10, 10);
+        DrawCircleV(seek, 50.0, BLUE);
+        DrawCircleV(target->rigidBody->position, 50.0, BLACK);
 
         EndDrawing();
     }
