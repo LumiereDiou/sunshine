@@ -1,5 +1,6 @@
 #include "rlImGui.h"
 #include "Math.h"
+#include <vector>
 
 
 #define SCREEN_WIDTH 1280
@@ -12,10 +13,30 @@ public:
     Vector2 velocity{};
     Vector2 acceleration{};
 
+    const float maxSpeed = 500.0f, maxAcceleration = 500.0f;
+
+    Rigidbody()
+        : position{}
+        , velocity{ 10.0f, 0.0f}
+        , acceleration{50.0f,0.0f}
+    {
+
+    }
+
+    Rigidbody(float x, float y)
+    {
+        position.x = x;
+        position.y = y;
+    }
     void update(Vector2 position, Vector2 velocity, Vector2 acceleration, float deltaTime)
     {
         this->position = position + velocity * deltaTime + acceleration * 0.5f * deltaTime * deltaTime;
         this->velocity = velocity + acceleration * deltaTime;
+        float currentSpeed = Length(velocity);
+        if (currentSpeed > maxSpeed)
+        {
+            this->velocity = velocity * (maxSpeed / currentSpeed);
+        }
     }
 
     float screenWrap(Vector2 position)
@@ -46,11 +67,16 @@ class Agent
 {
 public:
     Rigidbody* rigidBody;
-    const float maxSpeed = 200.0f, maxAcceleration = 200.0f;
 
     Agent()
     {
         rigidBody = new Rigidbody();
+    }
+    Agent(float x, float y)
+    {
+        rigidBody = new Rigidbody();
+        rigidBody->position.x = x;
+        rigidBody->position.y = y;
     }
 };
 
@@ -59,36 +85,75 @@ int main(void)
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sunshine");
     rlImGuiSetup(true);
     SetTargetFPS(60);
-
-    Agent* agent = new Agent();
+    
     Agent* target = new Agent();
 
+    Agent* agent1 = new Agent(500,100);
+    Agent* agent2 = new Agent(400,200);
+    Agent* agent3 = new Agent(300,300);
+    Agent* agent4 = new Agent(200,400);
+    Agent* agent5 = new Agent(100,500);
+
+    Rigidbody* obstacle1 = new Rigidbody(100, 676);
+    Rigidbody* obstacle2 = new Rigidbody(356, 532);
+    Rigidbody* obstacle3 = new Rigidbody(612, 388);
+    Rigidbody* obstacle4 = new Rigidbody(868, 244);
+    Rigidbody* obstacle5 = new Rigidbody(1124,100);
+
+    std::vector<Agent*> agentList;
+    std::vector<Rigidbody*> obstacleList;
+
+    agentList.push_back(agent1);
+    agentList.push_back(agent2);
+    agentList.push_back(agent3);
+    agentList.push_back(agent4);
+    agentList.push_back(agent5);
+
+    obstacleList.push_back(obstacle1);
+    obstacleList.push_back(obstacle2);
+    obstacleList.push_back(obstacle3);
+    obstacleList.push_back(obstacle4);
+    obstacleList.push_back(obstacle5);
+    
     while (!WindowShouldClose())
     {
         const float deltaTime = GetFrameTime();
         
-        agent->rigidBody->update(agent->rigidBody->position, agent->rigidBody->velocity, agent->rigidBody->acceleration, deltaTime);
-
-        agent->rigidBody->screenWrap(agent->rigidBody->position);
+        for (auto i : agentList)
+        {
+            i->rigidBody->screenWrap(i->rigidBody->position);
+            i->rigidBody->update(i->rigidBody->position, i->rigidBody->velocity, i->rigidBody->acceleration, deltaTime);
+        }
 
         target->rigidBody->position = GetMousePosition();
 
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+        for (auto i : agentList)
         {
-            agent->rigidBody->seek(agent->rigidBody->position, agent->rigidBody->velocity, target->rigidBody->position, agent->maxSpeed, agent->maxAcceleration);
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+            {
+                i->rigidBody->seek(i->rigidBody->position, i->rigidBody->velocity, target->rigidBody->position, i->rigidBody->maxSpeed, i->rigidBody->maxAcceleration);
+            }
+            else
+            {
+                for (auto object : obstacleList)
+                {
+                    i->rigidBody->flee(i->rigidBody->position, i->rigidBody->velocity, object->position, i->rigidBody->maxSpeed, i->rigidBody->maxAcceleration);
+                }
+            }
+            
         }
-        else
-        {
-            agent->rigidBody->flee(agent->rigidBody->position, agent->rigidBody->velocity, target->rigidBody->position, agent->maxSpeed, agent->maxAcceleration);
-
-        }
-        
-        
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        DrawCircleV(agent->rigidBody->position, 20.0f, RED);
+        for (auto i : agentList)
+        {
+            DrawCircleV(i->rigidBody->position, 20.0f, RED);
+        }
+        for (auto i : obstacleList)
+        {
+            DrawCircleV(i->position, 20.0f, GREEN);
+        }
 
         DrawCircleV(target->rigidBody->position, 20.0f, BLUE);
 
