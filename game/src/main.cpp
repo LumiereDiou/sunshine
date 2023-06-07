@@ -1,5 +1,7 @@
 #include "rlImGui.h"
 #include "Math.h"
+#include <vector>
+
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
@@ -19,39 +21,30 @@ public:
     Vector2 direction{};
     float angularSpeed;
     float radius;
-    Color rightColor;
-    Color leftColor;
 };
-
-void Update(Rigidbody& rb, float dt)
-{
-    rb.velocity = rb.velocity + rb.acceleration * dt;
-    rb.position = rb.position + rb.velocity * dt + rb.acceleration * dt * dt * 0.5f;
-    rb.direction = RotateTowards(rb.direction, Normalize(rb.velocity), rb.angularSpeed * dt);
-}
-
-Vector2 Seek(const Vector2& pos, const Rigidbody& rb, float maxSpeed)
-{
-    return Normalize(pos - rb.position) * maxSpeed - rb.velocity;
-}
 
 class Agent : public Rigidbody
 {
 public:
-    Rigidbody* rigidBody;
-
-    Agent()
-    {
-        rigidBody = new Rigidbody();
-    }
     Agent(float x, float y)
     {
-        rigidBody = new Rigidbody();
-        rigidBody->position.x = x;
-        rigidBody->position.y = y;
+        position.x = x;
+        position.y = y;
+        direction = { 0.0f, 1.0f };
+        angularSpeed = 100.0f * DEG2RAD;
+        this->radius = 20.0f;
     }
 
-    void ObstacleAvoidance(Agent& obstacle, Vector2 leftEnd, Vector2 rightEnd ,  float dt)
+    Agent(float x, float y, float radius)
+    {
+        position.x = x;
+        position.y = y;
+        direction = { 0.0f, 1.0f };
+        angularSpeed = 100.0f * DEG2RAD;
+        this->radius = radius;
+    }
+
+    void ObstacleAvoidance(Agent& obstacle, Vector2 leftEnd, Vector2 rightEnd, float dt)
     {
         bool leftCollision = CheckCollisionLineCircle(position, leftEnd, obstacle.position, obstacle.radius);
         bool rightCollision = CheckCollisionLineCircle(position, rightEnd, obstacle.position, obstacle.radius);
@@ -67,10 +60,22 @@ public:
             float linearSpeed = Length(velocity);
             velocity = Rotate(linearDirection, angularSpeed * dt) * linearSpeed;
         }
-        rightColor = rightCollision ? RED : GREEN;
-        leftColor = leftCollision ? RED : GREEN;
     }
+
+
 };
+
+void Update(Agent& agent, float deltaTime)
+{
+    agent.velocity = agent.velocity + agent.acceleration * deltaTime;
+    agent.position = agent.position + agent.velocity * deltaTime + agent.acceleration * deltaTime * deltaTime * 0.5f;
+    agent.direction = RotateTowards(agent.direction, Normalize(agent.velocity), agent.angularSpeed * deltaTime);
+}
+
+Vector2 Seek(const Vector2& position, const Agent& agent, float maxSpeed)
+{
+    return Normalize(position - agent.position) * maxSpeed - agent.velocity;
+}
 
 int main(void)
 {
@@ -80,47 +85,87 @@ int main(void)
     rlImGuiSetup(true);
     SetTargetFPS(60);
 
-    float seekerProbeLength = 100.0f;
-    float seekerRadius = 25.0f;
-    Agent seeker;
-    seeker.position = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
-    seeker.direction = { 0.0f, 1.0f };
-    seeker.angularSpeed = 100.0f * DEG2RAD;
+    Agent* agent1 = new Agent(500, 100);
+    Agent* agent2 = new Agent(400, 200);
+    Agent* agent3 = new Agent(300, 300);
+    Agent* agent4 = new Agent(200, 400);
+    Agent* agent5 = new Agent(100, 500);
 
-    Agent obstacle;
-    obstacle.position = { SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.25f };
-    obstacle.radius = 50.0f;
+    std::vector<Agent*> agentList;
+    std::vector<Agent*> obstacleList;
 
-    bool useGUI = false;
+    agentList.push_back(agent1);
+    agentList.push_back(agent2);
+    agentList.push_back(agent3);
+    agentList.push_back(agent4);
+    agentList.push_back(agent5);
+
+    float agentProbeLength = 100.0f;
+    float obstacleRadius = 50.0f;
+
+    Vector2 right;
+    Vector2 left;
+    Vector2 rightEnd;
+    Vector2 leftEnd;
+
+    Vector2 right2;
+    Vector2 left2;
+    Vector2 rightEnd2;
+    Vector2 leftEnd2;
+
     while (!WindowShouldClose())
     {
         const float dt = GetFrameTime();
 
-        Vector2 right = Rotate(seeker.direction, 30.0f * DEG2RAD);
-        Vector2 left = Rotate(seeker.direction, -30.0f * DEG2RAD);
-        Vector2 rightEnd = seeker.position + right * seekerProbeLength;
-        Vector2 leftEnd = seeker.position + left * seekerProbeLength;
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            Vector2 position = GetMousePosition();
+            obstacleList.push_back(new Agent(position.x, position.y, obstacleRadius));
+        }
 
-        Vector2 right2 = Rotate(seeker.direction, 210.0f * DEG2RAD);
-        Vector2 left2 = Rotate(seeker.direction, -210.0f * DEG2RAD);
-        Vector2 rightEnd2 = seeker.position + right2 * seekerProbeLength;
-        Vector2 leftEnd2 = seeker.position + left2 * seekerProbeLength;
+        for (auto i : agentList)
+        {
+            //create whiskers for each agent
+            right = Rotate(i->direction, 30.0f * DEG2RAD);
+            left = Rotate(i->direction, -30.0f * DEG2RAD);
+            rightEnd = i->position + right * agentProbeLength;
+            leftEnd = i->position + left * agentProbeLength;
+            
+            //create whiskers that are 180 from the first
+            right2 = Rotate(i->direction, 210.0f * DEG2RAD);
+            left2 = Rotate(i->direction, -210.0f * DEG2RAD);
+            rightEnd2 = i->position + right2 * agentProbeLength;
+            leftEnd2 = i->position + left2 * agentProbeLength;
 
-        seeker.acceleration = Seek(GetMousePosition(), seeker, 100.0f);
-        Update(seeker, dt);
-        
-        seeker.ObstacleAvoidance(obstacle, leftEnd, rightEnd, dt);
-        seeker.ObstacleAvoidance(obstacle, leftEnd2, rightEnd2, dt);
+            //implement seek for all agents
+            i->acceleration = Seek(GetMousePosition(), *i, 100.0f);
+            
+            Update(*i, dt);
+
+            for (auto x : obstacleList)
+            {
+                //run obstacle avoidance for each agent against every obstacle
+                i->ObstacleAvoidance(*x, leftEnd, rightEnd, dt);
+                i->ObstacleAvoidance(*x, leftEnd2, rightEnd2, dt);
+            }
+
+            //draw each agent and it's whiskers
+            DrawCircleV(i->position, i->radius, BLUE);
+            DrawLineV(i->position, rightEnd, GREEN);
+            DrawLineV(i->position, leftEnd, GREEN);
+            DrawLineV(i->position, rightEnd2, RED);
+            DrawLineV(i->position, leftEnd2, RED);
+         
+        }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawCircleV(seeker.position, seekerRadius, BLUE);
-        DrawCircleV(obstacle.position, obstacle.radius, GRAY);
-        DrawLineV(seeker.position, rightEnd, seeker.rightColor);
-        DrawLineV(seeker.position, leftEnd, seeker.leftColor);
 
-        DrawLineV(seeker.position, rightEnd2, seeker.rightColor);
-        DrawLineV(seeker.position, leftEnd2, seeker.leftColor);
+        //draw obstacles
+        for (auto i : obstacleList)
+        {
+            DrawCircleV(i->position, i->radius, GRAY);
+        }
 
         EndDrawing();
     }
