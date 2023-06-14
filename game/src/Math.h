@@ -1,5 +1,6 @@
 #pragma once
 #include <corecrt_math.h>
+#include <vector>
 
 //----------------------------------------------------------------------------------
 // Defines and Macros

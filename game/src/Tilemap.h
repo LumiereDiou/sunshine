@@ -1,57 +1,147 @@
 #pragma once
 #include "raylib.h"
 #include "TileCoord.h"
-#define MAP_WIDTH 32
-#define MAP_HEIGHT 24
 
-enum class Tile
+const int TILE_SIZE = 40; //size of each tile
+
+enum class TileType
 {
-	Floor = 0,
-	Wall,
-	Count // number of tile types
+    Floor = 0,
+    Wall
+};
+
+struct Tile
+{
+    TileType tileType;
+    std::vector<int> adjacentTiles; //list of adjacent tiles
 };
 
 class Tilemap
 {
+private:
+    int width;  //columns
+    int height; //rows
+    std::vector<Tile> tiles;
+
 public:
-	float tileSizeX = 32;
-	float tileSizeY = 32;
-	Color tileColors[(int)Tile::Count];
+    Tilemap(int width, int height)
+    {
+        this->width = width; 
+        this->height = height;
+        tiles.resize(width * height);
+    }
 
-	Tile tiles[MAP_WIDTH][MAP_HEIGHT];
+    Tile& GetTile(int x, int y)
+    {
+        return tiles[y * width + x];
+    }
 
-	Tilemap()
-	{
-		tileColors[(int)Tile::Floor] = GREEN;
-		tileColors[(int)Tile::Wall] = DARKGRAY;
-	}
+    int GetWidth()
+    {
+        return width;
+    }
 
-	void Randomize()
-	{
-		for (int x = 0; x < MAP_WIDTH; x++)
-		{
-			for (int y = 0; y < MAP_HEIGHT; y++)
-			{
-				tiles[x][y] = (Tile)(rand() % (int)Tile::Count);
-			}
-		}
-	}
+    int GetHeight()
+    {
+        return height;
+    }
 
-	Vector2 GetScreenPositionOfTile(TileCoord coordinate)
-	{
-		return { coordinate.x + tileSizeX, coordinate.y + tileSizeY };
-	}
+    void GenerateLevel()
+    {
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                Tile& tile = GetTile(x, y);
+                tile.tileType = (rand() % 5 == 0) ? TileType::Wall : TileType::Floor;
+            }
+        }
+    }
 
-	void Draw()
-	{
-		for (int x = 0; x < MAP_WIDTH; x++)
-		{
-			for (int y = 0; y < MAP_HEIGHT; y++)
-			{
-				Tile tileType = tiles[x][y];
-				Color tileColor = tileColors[(int)tileType];
-				DrawRectangle(x * tileSizeX, y * tileSizeY, tileSizeX, tileSizeY, tileColor);
-			}
-		}
-	}
+    void CreateAdjacentTiles()
+    {
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                Tile& tile = GetTile(x, y);
+                tile.adjacentTiles.clear();
+
+                if (tile.tileType == TileType::Floor)
+                {
+                    if (y > 0 && GetTile(x, y - 1).tileType == TileType::Floor)
+                        tile.adjacentTiles.push_back((y - 1) * width + x);
+
+                    if (y < height - 1 && GetTile(x, y + 1).tileType == TileType::Floor)
+                        tile.adjacentTiles.push_back((y + 1) * width + x);
+
+                    if (x > 0 && GetTile(x - 1, y).tileType == TileType::Floor)
+                        tile.adjacentTiles.push_back(y * width + (x - 1));
+
+                    if (x < width - 1 && GetTile(x + 1, y).tileType == TileType::Floor)
+                        tile.adjacentTiles.push_back(y * width + (x + 1));
+                }
+            }
+        }
+    }
+
+    bool IsTileTraversable(int x, int y)
+    {
+        if (x < 0 || x >= width || y < 0 || y >= height)
+            return false;
+
+        return GetTile(x, y).tileType == TileType::Floor;
+    }
+
+    void DrawTiles()
+    {
+        for(int x = 0; x < width; ++x)
+        {
+            for(int y = 0; y < height; ++y)
+            {
+                Tile& tile = GetTile(x, y);
+                Rectangle rect{ x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE };
+
+                switch (tile.tileType)
+                {
+                case TileType::Floor:
+                    DrawRectangleRec(rect, BROWN);
+                    break;
+
+                case TileType::Wall:
+                    DrawRectangleRec(rect, GRAY);
+                    break;
+                }
+
+                DrawRectangleLinesEx(rect, 1, BLACK);
+
+            }
+        }
+    }
+
+    void DrawAdjacentLines()
+    {
+        for(int x = 0; x < width; ++x)
+        {
+            for(int y = 0; y < height; ++y)
+            {
+                Tile& tile = GetTile(x, y);
+                Rectangle rect{ x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE };
+                // Draw adjacency circles and lines
+                if (IsTileTraversable(x, y))
+                {
+                    Vector2 center = { (rect.x + rect.width / 2), (rect.y + rect.height / 2) };
+                    DrawCircle(center.x, center.y, 5, WHITE);
+
+                    for (int adjTileIndex : tile.adjacentTiles)
+                    {
+                        Tile& adjTile = tiles[adjTileIndex];
+                        Rectangle adjRect{ adjTileIndex % width * TILE_SIZE, adjTileIndex / width * TILE_SIZE, TILE_SIZE, TILE_SIZE };
+                        Vector2 adjCenter = { (adjRect.x + adjRect.width / 2), (adjRect.y + adjRect.height / 2) };
+                        DrawLineEx(center, adjCenter, 1, WHITE);
+                    }
+                }
+            }
+        }
+    }
 };
