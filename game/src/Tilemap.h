@@ -65,9 +65,10 @@ public:
             for (int x = 0; x < width; ++x)
             {
                 Tile& tile = GetTile(x, y);
+                
                 tile.adjacentTiles.clear();
 
-                if (tile.tileType == TileType::Floor)
+                if (tile.tileType == TileType::Floor) //north south east and west
                 {
                     if (y > 0 && GetTile(x, y - 1).tileType == TileType::Floor)
                         tile.adjacentTiles.push_back((y - 1) * width + x);

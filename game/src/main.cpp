@@ -3,15 +3,15 @@
 #include "raylib.h"
 #include "Tilemap.h"
 
-Tilemap tilemap(32, 18);
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+
+Tilemap tileMap(32, 18);
 Vector2 character{ 0, 0 };
 Vector2 updatedPosition;
 
 int main()
 {
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
-
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Asher - Lab_4");
 
     rlImGuiSetup(true);
@@ -20,20 +20,19 @@ int main()
 
     SetTargetFPS(10); //set framrate to 10 to get desired target movement
 
-    tilemap.GenerateLevel();
-    tilemap.CreateAdjacentTiles();
+    tileMap.GenerateLevel();
 
     while (!WindowShouldClose())
     {
         updatedPosition = character;
 
-        if (IsKeyDown(KEY_W) && tilemap.IsTileTraversable(character.x, character.y - 1))
+        if (IsKeyDown(KEY_W) && tileMap.IsTileTraversable(character.x, character.y - 1))
             updatedPosition.y--;
-        if (IsKeyDown(KEY_S) && tilemap.IsTileTraversable(character.x, character.y + 1))
+        if (IsKeyDown(KEY_S) && tileMap.IsTileTraversable(character.x, character.y + 1))
             updatedPosition.y++;
-        if (IsKeyDown(KEY_A) && tilemap.IsTileTraversable(character.x - 1, character.y))
+        if (IsKeyDown(KEY_A) && tileMap.IsTileTraversable(character.x - 1, character.y))
             updatedPosition.x--;
-        if (IsKeyDown(KEY_D) && tilemap.IsTileTraversable(character.x + 1, character.y))
+        if (IsKeyDown(KEY_D) && tileMap.IsTileTraversable(character.x + 1, character.y))
             updatedPosition.x++;
 
         if (updatedPosition.x != character.x || updatedPosition.y != character.y)
@@ -41,12 +40,15 @@ int main()
             character = updatedPosition;
         }
 
+        tileMap.CreateAdjacentTiles();
+
         BeginDrawing();
+
         ClearBackground(RAYWHITE);
 
-        tilemap.DrawTiles();
+        tileMap.DrawTiles();
 
-        tilemap.DrawAdjacentLines();
+        tileMap.DrawAdjacentLines();
 
         if (IsKeyPressed(KEY_GRAVE)) useGUI = !useGUI;
         if (useGUI)
@@ -56,7 +58,7 @@ int main()
 
             if (ImGui::Button("Generate map"))
             {
-                tilemap.GenerateLevel();
+                tileMap.GenerateLevel();
             }
 
             rlImGuiEnd();
@@ -64,9 +66,10 @@ int main()
 
         // Draw character sprite
         Rectangle characterRect{ character.x * TILE_SIZE, character.y * TILE_SIZE, TILE_SIZE, TILE_SIZE };
+        
         DrawRectangleRec(characterRect, BLACK);
 
-        //DrawText("Press ~ to open/close GUI", 10, 30, 20, GRAY);
+        DrawText("Press ~ to open/close GUI", 10, 30, 20, BLACK);
 
         EndDrawing();
     }
