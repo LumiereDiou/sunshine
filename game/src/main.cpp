@@ -2,17 +2,20 @@
 #include "rlImGui.h"
 #include "raylib.h"
 #include "Tilemap.h"
+#include "Pathfinder.h"
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
+
 Tilemap tileMap(32, 18);
-Vector2 character{ 0, 0 };
-Vector2 updatedPosition;
+Tilemap& level = tileMap;
+TileCoord character{ 0, 0 };
+TileCoord updatedPosition;
 
 int main()
 {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Asher - Lab_4");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Asher - Lab_5");
 
     rlImGuiSetup(true);
 
@@ -42,6 +45,8 @@ int main()
 
         tileMap.CreateAdjacentTiles();
 
+        TileCoord mouseTilePos = level.GetTileAtScreenPos(GetMousePosition());
+
         BeginDrawing();
 
         ClearBackground(RAYWHITE);
@@ -65,9 +70,11 @@ int main()
         }
 
         // Draw character sprite
-        Rectangle characterRect{ character.x * TILE_SIZE, character.y * TILE_SIZE, TILE_SIZE, TILE_SIZE };
+        Vector2 characterCenter{ character.x * TILE_SIZE + TILE_SIZE / 2 , character.y * TILE_SIZE + TILE_SIZE / 2 };
         
-        DrawRectangleRec(characterRect, BLACK);
+        //DrawRectangleRec(characterRect, BLACK);
+        
+        DrawCircleV(characterCenter, 15, BLACK);
 
         DrawText("Press ~ to open/close GUI", 10, 30, 20, BLACK);
 

@@ -14,6 +14,7 @@ struct Tile
 {
     TileType tileType;
     std::vector<int> adjacentTiles; //list of adjacent tiles
+    std::vector<int> traversableTiles;
 };
 
 class Tilemap
@@ -34,6 +35,11 @@ public:
     Tile& GetTile(int x, int y)
     {
         return tiles[y * width + x];
+    }
+
+    TileCoord GetTileAtScreenPos(Vector2 positionOnScreen) //Find a tile coordinate given a position on the screen over a tile
+    {
+
     }
 
     int GetWidth()
@@ -92,6 +98,24 @@ public:
             return false;
 
         return GetTile(x, y).tileType == TileType::Floor;
+    }
+
+    std::vector<TileCoord> GetAllTraversableTiles()
+    {
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                Tile& tile = GetTile(x, y);
+
+                tile.traversableTiles.clear();
+
+                if (tile.tileType == TileType::Floor) //north south east and west
+                {
+                    tile.traversableTiles.push_back(y * width + x);
+                }
+            }
+        }
     }
 
     void DrawTiles()
