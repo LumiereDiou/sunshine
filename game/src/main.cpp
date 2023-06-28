@@ -6,49 +6,72 @@
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
-Tilemap tileMap(32, 18);
+void RegenerateLevel(Tilemap& level, float chanceOfWall = 20)
+{
+    for (int x = 0; x < level.GetWidth(); x++)
+    {
+        for (int y = 0; y < level.GetHeight(); y++)
+        {
+            if ((rand() % 100 + 1) < chanceOfWall)
+                level.SetTile(x, y, Tile::Wall);
+            else
+                level.SetTile(x, y, Tile::Floor);
+        }
+    }
+}
+
+//Tilemap tileMap(32, 18);
 Vector2 character{ 0, 0 };
 Vector2 updatedPosition;
 
+Tilemap tileMap;
+
 int main()
 {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Asher - Lab_4");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Asher - Lab_5");
 
     rlImGuiSetup(true);
 
     bool useGUI = false;
 
-    SetTargetFPS(10); //set framrate to 10 to get desired target movement
+    SetTargetFPS(60); //set framrate to 10 to get desired target movement
 
-    tileMap.GenerateLevel();
+    //tileMap.GenerateLevel();
+
+    RegenerateLevel(tileMap);
 
     while (!WindowShouldClose())
     {
-        updatedPosition = character;
 
-        if (IsKeyDown(KEY_W) && tileMap.IsTileTraversable(character.x, character.y - 1))
-            updatedPosition.y--;
-        if (IsKeyDown(KEY_S) && tileMap.IsTileTraversable(character.x, character.y + 1))
-            updatedPosition.y++;
-        if (IsKeyDown(KEY_A) && tileMap.IsTileTraversable(character.x - 1, character.y))
-            updatedPosition.x--;
-        if (IsKeyDown(KEY_D) && tileMap.IsTileTraversable(character.x + 1, character.y))
-            updatedPosition.x++;
-
-        if (updatedPosition.x != character.x || updatedPosition.y != character.y)
-        {
-            character = updatedPosition;
-        }
-
-        tileMap.CreateAdjacentTiles();
+       //if (IsKeyDown(KEY_W) && tileMap.IsTraversableAt(character.x, character.y - 1))
+       //    updatedPosition.y--;
+       //if (IsKeyDown(KEY_S) && tileMap.IsTraversableAt(character.x, character.y + 1))
+       //    updatedPosition.y++;
+       //if (IsKeyDown(KEY_A) && tileMap.IsTraversableAt(character.x - 1, character.y))
+       //    updatedPosition.x--;
+       //if (IsKeyDown(KEY_D) && tileMap.IsTraversableAt(character.x + 1, character.y))
+       //    updatedPosition.x++;
+       //
+       //if (updatedPosition.x != character.x || updatedPosition.y != character.y)
+       //{
+       //    character = updatedPosition;
+       //}
+       //
+       //tileMap.CreateAdjacentTiles();
 
         BeginDrawing();
 
         ClearBackground(RAYWHITE);
-
+        
         tileMap.DrawTiles();
 
-        tileMap.DrawAdjacentLines();
+        tileMap.DrawBorders();
+
+        tileMap.DrawAdjacencies();
+
+       // tileMap.DrawTiles();
+       //
+       // tileMap.DrawAdjacentLines();
 
         if (IsKeyPressed(KEY_GRAVE)) useGUI = !useGUI;
         if (useGUI)
@@ -58,18 +81,21 @@ int main()
 
             if (ImGui::Button("Generate map"))
             {
-                tileMap.GenerateLevel();
+               // tileMap.GenerateLevel();
+                RegenerateLevel(tileMap);
             }
 
             rlImGuiEnd();
         }
 
-        // Draw character sprite
-        Rectangle characterRect{ character.x * TILE_SIZE, character.y * TILE_SIZE, TILE_SIZE, TILE_SIZE };
         
-        DrawRectangleRec(characterRect, BLACK);
 
-        DrawText("Press ~ to open/close GUI", 10, 30, 20, BLACK);
+        // Draw character sprite
+       //Rectangle characterRect{ character.x * tileMap.GetWidth(), character.y * tileMap.GetWidth(), tileMap.GetWidth(), tileMap.GetWidth()};
+       //
+       //DrawRectangleRec(characterRect, BLACK);
+        //
+        //DrawText("Press ~ to open/close GUI", 10, 30, 20, BLACK);
 
         EndDrawing();
     }
