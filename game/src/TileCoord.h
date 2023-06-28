@@ -1,6 +1,6 @@
 #pragma once
+#include <algorithm>
 #include "Math.h"
-#include <functional>
 
 struct TileCoord
 {
@@ -57,4 +57,3 @@ std::cout << "{ INT_MAX, 0 }      ->" << std::hash<TileCoord>().operator()(maxX)
 std::cout << "{ 0, INT_MIN}       ->" << std::hash<TileCoord>().operator()(minY) << std::endl;
 std::cout << "{ 0, INT_MAX}       ->" << std::hash<TileCoord>().operator()(maxY) << std::endl;
 */
-
