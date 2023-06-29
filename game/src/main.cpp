@@ -12,6 +12,7 @@ Tilemap tileMap(32, 18);
 Tilemap& level = tileMap;
 TileCoord character{ 0, 0 };
 TileCoord updatedPosition;
+Pathfinder pathfinder;
 
 int main()
 {
@@ -45,7 +46,32 @@ int main()
 
         tileMap.CreateAdjacentTiles();
 
-        TileCoord mouseTilePos = level.GetTileAtScreenPos(GetMousePosition());
+        TileCoord mouseTilePos = tileMap.GetTileAtScreenPos(GetMousePosition());
+
+        //if (level.ContainsTile(mouseTilePos))
+        //{
+            if (IsKeyDown(KEY_M))//IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            {
+                pathfinder = Pathfinder(&tileMap, character, TileCoord(mouseTilePos));
+                tileMap.DrawAdjacentLines();
+            }
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                pathfinder = Pathfinder(&tileMap, character, TileCoord(mouseTilePos));
+                pathfinder.SolvePath();
+                tileMap.DrawAdjacentLines();
+            }
+        //}
+
+        if (pathfinder.map != nullptr)
+        {
+            if (IsKeyPressed(KEY_SPACE))
+            {
+                pathfinder.ProcessNextIterationFunctional();
+            }
+
+            //if (drawPathInfo) pathfinder.DrawCurrentState();
+        }
 
         BeginDrawing();
 

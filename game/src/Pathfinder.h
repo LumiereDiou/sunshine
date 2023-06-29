@@ -10,7 +10,7 @@ public:
 private:
 	std::unordered_map<TileCoord, float, std::hash<TileCoord>, std::equal_to<TileCoord>> unvisited;
 	std::unordered_map<TileCoord, float, std::hash<TileCoord>, std::equal_to<TileCoord>> visited;
-	std::unordered_map<TileCoord, float, std::hash<TileCoord>, std::equal_to<TileCoord>> cheapestEdgeTo;
+	std::unordered_map<TileCoord, TileCoord, std::hash<TileCoord>, std::equal_to<TileCoord>> cheapestEdgeTo;
 
 	TileCoord startNode;
 	TileCoord goalNode;
@@ -54,12 +54,30 @@ public:
 		unvisited.erase(currentNode);
 	}
 
+	float GetTotalCostToReach(TileCoord pos) { return unvisited[pos]; }
+
+	void SetCostToReach(TileCoord pos, float newCost) { unvisited[pos] = newCost; }
+
 	void ProcessNextIterationFunctional()
 	{
 		if (IsCompleted()) return;
 		currentNode = GetLowerCostIn(unvisited).first;
 
 		//Todo: evaluate cost to reach this nodes neigbors and update
+
+		for (auto adjacent : map->GetTraversableTilesAdjacentTo(currentNode))
+		{
+			if (IsVisited(adjacent)) continue;
+
+			float costThisWay = GetTotalCostToReach(currentNode) + map->GetCostForTile(adjacent);
+
+			float oldCost = GetTotalCostToReach(adjacent);
+			if (costThisWay < oldCost)
+			{
+				SetCostToReach(adjacent, costThisWay);
+				cheapestEdgeTo[adjacent] = currentNode;
+			}
+		}
 
 		MoveToVisitedSet(currentNode);
 	}

@@ -4,6 +4,11 @@
 
 const int TILE_SIZE = 40; //size of each tile
 
+const TileCoord NORTH = { 0, -1 };
+const TileCoord SOUTH = { 0,  1 };
+const TileCoord EAST = { 1,  0 };
+const TileCoord WEST = { -1,  0 };
+
 enum class TileType
 {
     Floor = 0,
@@ -39,7 +44,7 @@ public:
 
     TileCoord GetTileAtScreenPos(Vector2 positionOnScreen) //Find a tile coordinate given a position on the screen over a tile
     {
-
+        return { (float)positionOnScreen.x / width , (float)positionOnScreen.y / height };
     }
 
     int GetWidth()
@@ -92,6 +97,14 @@ public:
         }
     }
 
+    bool ContainsTile(TileCoord tilePosition)
+    {
+        if (tilePosition.x < 0 || tilePosition.x >= GetWidth() || tilePosition.y < 0 || tilePosition.y >= GetHeight())
+            return false;
+        else
+            return true;
+    }
+
     bool IsTileTraversable(int x, int y)
     {
         if (x < 0 || x >= width || y < 0 || y >= height)
@@ -100,22 +113,44 @@ public:
         return GetTile(x, y).tileType == TileType::Floor;
     }
 
+    int GetCostForTile(TileCoord tilePositon)  // having this function makes it easier to change costs per tile the future
+    {
+        return 1;
+    }
+
     std::vector<TileCoord> GetAllTraversableTiles()
     {
+        std::vector<TileCoord> tilePositions;
+
         for (int y = 0; y < height; ++y)
         {
             for (int x = 0; x < width; ++x)
             {
-                Tile& tile = GetTile(x, y);
+                TileCoord tilePositon{x,y};
 
-                tile.traversableTiles.clear();
-
-                if (tile.tileType == TileType::Floor) //north south east and west
+                if (IsTileTraversable(x, y))
                 {
-                    tile.traversableTiles.push_back(y * width + x);
+                    tilePositions.push_back(tilePositon);
                 }
             }
         }
+        return tilePositions;
+    }
+
+
+    std::vector<TileCoord> GetTraversableTilesAdjacentTo(TileCoord tilePos)
+    {
+        std::vector<TileCoord> adjacentTilePositions;
+        TileCoord N = tilePos + NORTH;
+        TileCoord S = tilePos + SOUTH;
+        TileCoord E = tilePos + EAST;
+        TileCoord W = tilePos + WEST;
+        if (IsTileTraversable(N.x, N.y)) adjacentTilePositions.push_back(N);
+        if (IsTileTraversable(S.x, S.y)) adjacentTilePositions.push_back(S);
+        if (IsTileTraversable(E.x, E.y)) adjacentTilePositions.push_back(E);
+        if (IsTileTraversable(W.x, W.y)) adjacentTilePositions.push_back(W);
+
+        return adjacentTilePositions;
     }
 
     void DrawTiles()
@@ -156,7 +191,7 @@ public:
                 if (IsTileTraversable(x, y))
                 {
                     Vector2 center = { (rect.x + rect.width / 2), (rect.y + rect.height / 2) };
-                    DrawCircle(center.x, center.y, 5, WHITE);
+                    //DrawCircle(center.x, center.y, 5, WHITE);
 
                     for (int adjTileIndex : tile.adjacentTiles)
                     {
