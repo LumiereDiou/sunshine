@@ -9,7 +9,6 @@
 
 
 Tilemap tileMap(32, 18);
-Tilemap& level = tileMap;
 TileCoord character{ 0, 0 };
 TileCoord updatedPosition;
 Pathfinder pathfinder;
@@ -48,20 +47,19 @@ int main()
 
         TileCoord mouseTilePos = tileMap.GetTileAtScreenPos(GetMousePosition());
 
-        //if (level.ContainsTile(mouseTilePos))
-        //{
-            if (IsKeyDown(KEY_M))//IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        if (tileMap.ContainsTile(mouseTilePos))
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
                 pathfinder = Pathfinder(&tileMap, character, TileCoord(mouseTilePos));
-                tileMap.DrawAdjacentLines();
+                pathfinder.map->DrawAdjacentLines();
             }
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 pathfinder = Pathfinder(&tileMap, character, TileCoord(mouseTilePos));
                 pathfinder.SolvePath();
-                tileMap.DrawAdjacentLines();
             }
-        //}
+        }
 
         if (pathfinder.map != nullptr)
         {
@@ -78,7 +76,6 @@ int main()
         ClearBackground(RAYWHITE);
 
         tileMap.DrawTiles();
-
         tileMap.DrawAdjacentLines();
 
         if (IsKeyPressed(KEY_GRAVE)) useGUI = !useGUI;
@@ -97,8 +94,6 @@ int main()
 
         // Draw character sprite
         Vector2 characterCenter{ character.x * TILE_SIZE + TILE_SIZE / 2 , character.y * TILE_SIZE + TILE_SIZE / 2 };
-        
-        //DrawRectangleRec(characterRect, BLACK);
         
         DrawCircleV(characterCenter, 15, BLACK);
 

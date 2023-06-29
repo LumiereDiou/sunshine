@@ -71,9 +71,9 @@ public:
 
     void CreateAdjacentTiles()
     {
-        for (int y = 0; y < height; ++y)
+        for (int y = 0; y < height; y++)
         {
-            for (int x = 0; x < width; ++x)
+            for (int x = 0; x < width; x++)
             {
                 Tile& tile = GetTile(x, y);
                 
